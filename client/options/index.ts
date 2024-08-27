@@ -29,7 +29,6 @@ interface Options extends ChangeEmitter {
 	radio: boolean
 	eden: boolean
 	shamiradio: boolean
-	shamiradio2: boolean
 	bgVideo: string
 	bgMute: boolean
 	horizontalPosting: boolean
@@ -174,7 +173,7 @@ export function initOptions() {
 				break
 			default:
 				const flags = parseInt(value, 10)
-				for (const [i, key] of ["radio", "eden", "shamiradio", "shamiradio2"].entries()) {
+				for (const [i, key] of ["radio", "eden", "shamiradio"].entries()) {
 					if (flags & 1 << i) {
 						localStorage.setItem(key, "true")
 					}
