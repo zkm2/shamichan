@@ -161,22 +161,6 @@ export const specs: { [id: string]: OptionSpec } = {
 			},
 		),
 	},
-	shamiradio2: {
-		exec: toggleNowPlaying(
-			"https://shamiradio.stream/",
-			"https://shamiradio.stream/status-json.xsl",
-			({ icestats: { source } }) => {
-				if (source === undefined) {
-					return null
-				} else {				
-					const [fallback, main] = Array.isArray(source) ? source : [source]
-					const { listeners, server_name: streamer, title: song = "oh dear, tags aren't set" }
-						= main?.stream_start ? main : fallback
-					return { listeners, song, streamer }
-				}
-			},
-		),
-	},
 	// User-specified video in the background
 	bgVideo: {
 		type: optionType.menu,
