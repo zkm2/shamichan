@@ -3,260 +3,273 @@
 package parser
 
 import (
-	"bytes"
-	"crypto/rand"
-	"database/sql"
-	"math/big"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
+        "bytes"
+        "crypto/rand"
+        "database/sql"
+        "math/big"
+        "regexp"
+        "strconv"
+        "strings"
+        "time"
 
-	"github.com/bakape/meguca/common"
-	"github.com/bakape/meguca/config"
-	"github.com/bakape/meguca/db"
+        "github.com/bakape/meguca/common"
+        "github.com/bakape/meguca/config"
+        "github.com/bakape/meguca/db"
 )
 
 var (
-	syncWatchRegexp = regexp.MustCompile(`^sw(\d+:)?(\d+):(\d+)([+-]\d+)?$`)
+        syncWatchRegexp = regexp.MustCompile(`^sw(\d+:)?(\d+):(\d+)([+-]\d+)?$`)
 
-	errTooManyRolls = common.ErrInvalidInput("too many rolls")
-	errDieTooBig    = common.ErrInvalidInput("die too big")
+        errTooManyRolls = common.ErrInvalidInput("too many rolls")
+        errDieTooBig    = common.ErrInvalidInput("die too big")
 )
 
 // Returns a cryptographically secure pseudorandom int in the interval [0;max)
 func randInt(max int) int {
-	i, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
-	if i == nil { // Fuck error reporting here
-		return 0
-	}
-	return int(i.Int64())
+        i, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
+        if i == nil { // Fuck error reporting here
+                return 0
+        }
+        return int(i.Int64())
 }
 
 // Parse a matched hash command
 func parseCommand(
-	match []byte,
-	board string,
-	thread uint64,
-	id uint64,
-	ip string,
-	isSlut *bool,
-	isDead *bool,
+        match []byte,
+        board string,
+        thread uint64,
+        id uint64,
+        ip string,
+        isSlut *bool,
+        isDead *bool,
 ) (
-	com common.Command, err error,
+        com common.Command, err error,
 ) {
-	boardConfig := config.GetBoardConfigs(board)
+        boardConfig := config.GetBoardConfigs(board)
 
-	switch {
+        switch {
 
-	// Coin flip
-	case bytes.Equal(match, []byte("flip")):
-		com.Type = common.Flip
-		com.Flip = randInt(2) == 1
+        // Coin flip
+        case bytes.Equal(match, []byte("flip")):
+                com.Type = common.Flip
+                com.Flip = randInt(2) == 1
 
-	// 8ball; select random string from the the 8ball answer array
-	case bytes.Equal(match, []byte("8ball")):
-		com.Type = common.EightBall
-		answers := boardConfig.Eightball
-		if len(answers) != 0 {
-			com.Eightball = answers[randInt(len(answers))]
-		}
+        // 8ball; select random string from the the 8ball answer array
+        case bytes.Equal(match, []byte("8ball")):
+                com.Type = common.EightBall
+                answers := boardConfig.Eightball
+                if len(answers) != 0 {
+                        com.Eightball = answers[randInt(len(answers))]
+                }
 
-	// Increment pyu counter
-	case bytes.Equal(match, []byte("pyu")):
-		com.Type = common.Pyu
+        // Increment pyu counter
+        case bytes.Equal(match, []byte("pyu")):
+                com.Type = common.Pyu
 
-		if boardConfig.Pyu {
-			err = db.InTransaction(false, func(tx *sql.Tx) (err error) {
-				exists, err := db.PyuLimitExists(tx, ip, board)
+                if boardConfig.Pyu {
+                        err = db.InTransaction(false, func(tx *sql.Tx) (err error) {
+                                exists, err := db.PyuLimitExists(tx, ip, board)
 
-				if err != nil {
-					return
-				}
+                                if err != nil {
+                                        return
+                                }
 
-				if !exists {
-					err = db.WritePyuLimit(tx, ip, board)
+                                if !exists {
+                                        err = db.WritePyuLimit(tx, ip, board)
 
-					if err != nil {
-						return
-					}
-				}
+                                        if err != nil {
+                                                return
+                                        }
+                                }
 
-				limit, err := db.GetPyuLimit(tx, ip, board)
+                                limit, err := db.GetPyuLimit(tx, ip, board)
 
-				if err != nil {
-					return
-				}
+                                if err != nil {
+                                        return
+                                }
 
-				restricted, err := db.GetPyuLimitRestricted(tx, ip, board)
+                                restricted, err := db.GetPyuLimitRestricted(tx, ip, board)
 
-				if err != nil {
-					return
-				}
+                                if err != nil {
+                                        return
+                                }
 
-				if restricted {
-					com.Pyu, err = db.GetPcountA(tx, board)
+                                if restricted {
+                                        com.Pyu, err = db.GetPcountA(tx, board)
 
-					if err != nil {
-						return
-					}
+                                        if err != nil {
+                                                return
+                                        }
 
-					if !*isSlut {
-						*isSlut = true
-						err = db.Ban(
-							tx, board, "stop being such a slut", "system",
-							time.Hour, id, common.BanPost,
-						)
-					}
+                                        if !*isSlut {
+                                                *isSlut = true
+                                                err = db.Ban(
+                                                        tx, board, "stop being such a slut", "system",
+                                                        time.Hour, id, common.BanPost,
+                                                )
+                                        }
 
-					if err != nil {
-						return
-					}
-				} else {
-					switch limit {
-					case 1:
-						err = db.SetPyuLimitRestricted(tx, ip, board)
+                                        if err != nil {
+                                                return
+                                        }
+                                } else {
+                                        switch limit {
+                                        case 1:
+                                                err = db.SetPyuLimitRestricted(tx, ip, board)
 
-						if err != nil {
-							return
-						}
+                                                if err != nil {
+                                                        return
+                                                }
 
-						fallthrough
-					default:
-						com.Pyu, err = db.IncrementPcount(tx, board)
+                                                fallthrough
+                                        default:
+                                                com.Pyu, err = db.IncrementPcount(tx, board)
 
-						if err != nil {
-							return
-						}
+                                                if err != nil {
+                                                        return
+                                                }
 
-						err = db.DecrementPyuLimit(tx, ip, board)
+                                                err = db.DecrementPyuLimit(tx, ip, board)
 
-						if err != nil {
-							return
-						}
-					}
-				}
+                                                if err != nil {
+                                                        return
+                                                }
+                                        }
+                                }
 
-				return
-			})
-		} else {
-			com.Pyu, err = db.GetPcount(board)
-		}
+                                return
+                        })
+                } else {
+                        com.Pyu, err = db.GetPcount(board)
+                }
 
-	// Return current pyu count
-	case bytes.Equal(match, []byte("pcount")):
-		com.Type = common.Pcount
-		com.Pyu, err = db.GetPcount(board)
+        // Roulette
+        case bytes.Equal(match, []byte("roulette")):
+                var max uint8
+                max = 6
+                com.Type = common.Roulette
+                roll := uint8(randInt(int(max)) + 1)
+                /*if roll == 1 {
+                //err = db.ResetRoulette(tx, thread)
+                }*/
+                com.Roulette = [2]uint8{roll, max}
 
-	// Autobahn
-	case bytes.Equal(match, []byte("autobahn")):
-		com.Type = common.Autobahn
-		if !*isDead {
-			*isDead = true
-			err = db.InTransaction(false, func(tx *sql.Tx) (err error) {
-				return db.Ban(
-					tx, board, "brum brum", "system", time.Hour,
-					id, common.BanPost,
-				)
-			})
-		}
+                return
 
-	default:
-		matchStr := string(match)
+        // Return current pyu count
+        case bytes.Equal(match, []byte("pcount")):
+                com.Type = common.Pcount
+                com.Pyu, err = db.GetPcount(board)
 
-		// Synchronized time counter
-		if strings.HasPrefix(matchStr, "sw") {
-			com.Type = common.SyncWatch
-			com.SyncWatch = parseSyncWatch(matchStr)
-			return
-		}
+        // Autobahn
+        case bytes.Equal(match, []byte("autobahn")):
+                com.Type = common.Autobahn
+                if !*isDead {
+                        *isDead = true
+                        err = db.InTransaction(false, func(tx *sql.Tx) (err error) {
+                                return db.Ban(
+                                        tx, board, "brum brum", "system", time.Hour,
+                                        id, common.BanPost,
+                                )
+                        })
+                }
 
-		// Dice throw
-		com.Type = common.Dice
-		com.Dice, err = parseDice(matchStr)
-	}
+        default:
+                matchStr := string(match)
 
-	return
+                // Synchronized time counter
+                if strings.HasPrefix(matchStr, "sw") {
+                        com.Type = common.SyncWatch
+                        com.SyncWatch = parseSyncWatch(matchStr)
+                        return
+                }
+
+                // Dice throw
+                com.Type = common.Dice
+                com.Dice, err = parseDice(matchStr)
+        }
+
+        return
 }
 
 func isNumError(err error) bool {
-	_, ok := err.(*strconv.NumError)
-	return ok
+        _, ok := err.(*strconv.NumError)
+        return ok
 }
 
 // Parse dice throw commands
 func parseDice(match string) (val []uint16, err error) {
-	dice := common.DiceRegexp.FindStringSubmatch(match)
+        dice := common.DiceRegexp.FindStringSubmatch(match)
 
-	var rolls int
-	if len(dice[1]) == 0 {
-		rolls = 1
-	} else {
-		rolls, err = strconv.Atoi(string(dice[1]))
-		switch {
-		case err != nil:
-			if isNumError(err) {
-				err = common.StatusError{err, 400}
-			}
-			return
-		case rolls > 10:
-			return nil, errTooManyRolls
-		}
-	}
+        var rolls int
+        if len(dice[1]) == 0 {
+                rolls = 1
+        } else {
+                rolls, err = strconv.Atoi(string(dice[1]))
+                switch {
+                case err != nil:
+                        if isNumError(err) {
+                                err = common.StatusError{err, 400}
+                        }
+                        return
+                case rolls > 10:
+                        return nil, errTooManyRolls
+                }
+        }
 
-	max, err := strconv.Atoi(string(dice[2]))
-	switch {
-	case err != nil:
-		if isNumError(err) {
-			err = common.StatusError{err, 400}
-		}
-		return
-	case max > common.MaxDiceSides:
-		return nil, errDieTooBig
-	}
+        max, err := strconv.Atoi(string(dice[2]))
+        switch {
+        case err != nil:
+                if isNumError(err) {
+                        err = common.StatusError{err, 400}
+                }
+                return
+        case max > common.MaxDiceSides:
+                return nil, errDieTooBig
+        }
 
-	val = make([]uint16, rolls)
-	for i := 0; i < rolls; i++ {
-		if max != 0 {
-			val[i] = uint16(randInt(max)) + 1
-		} else {
-			val[i] = 0
-		}
-	}
-	return
+        val = make([]uint16, rolls)
+        for i := 0; i < rolls; i++ {
+                if max != 0 {
+                        val[i] = uint16(randInt(max)) + 1
+                } else {
+                        val[i] = 0
+                }
+        }
+        return
 }
 
 func parseSyncWatch(match string) [5]uint64 {
-	m := syncWatchRegexp.FindStringSubmatch(match)
-	var (
-		hours, min, sec, offset uint64
-		offsetDirection         byte
-	)
+        m := syncWatchRegexp.FindStringSubmatch(match)
+        var (
+                hours, min, sec, offset uint64
+                offsetDirection         byte
+        )
 
-	if m[1] != "" {
-		hours, _ = strconv.ParseUint(m[1][:len(m[1])-1], 10, 64)
-	}
-	min, _ = strconv.ParseUint(m[2], 10, 64)
-	sec, _ = strconv.ParseUint(m[3], 10, 64)
-	if m[4] != "" {
-		offsetDirection = m[4][0]
-		offset, _ = strconv.ParseUint(m[4][1:], 10, 64)
-	}
+        if m[1] != "" {
+                hours, _ = strconv.ParseUint(m[1][:len(m[1])-1], 10, 64)
+        }
+        min, _ = strconv.ParseUint(m[2], 10, 64)
+        sec, _ = strconv.ParseUint(m[3], 10, 64)
+        if m[4] != "" {
+                offsetDirection = m[4][0]
+                offset, _ = strconv.ParseUint(m[4][1:], 10, 64)
+        }
 
-	start := uint64(time.Now().Unix())
-	switch offsetDirection {
-	case '+':
-		start += offset
-	case '-':
-		start -= offset
-	}
-	end := start + sec + (hours*60+min)*60
+        start := uint64(time.Now().Unix())
+        switch offsetDirection {
+        case '+':
+                start += offset
+        case '-':
+                start -= offset
+        }
+        end := start + sec + (hours*60+min)*60
 
-	return [5]uint64{
-		hours,
-		min,
-		sec,
-		start,
-		end,
-	}
+        return [5]uint64{
+                hours,
+                min,
+                sec,
+                start,
+                end,
+        }
 }
