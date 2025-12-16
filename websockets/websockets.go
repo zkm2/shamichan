@@ -100,10 +100,12 @@ type receivedMessage struct {
 // Handler is an http.HandleFunc that responds to new websocket connection
 // requests.
 func Handler(w http.ResponseWriter, r *http.Request) (err error) {
-        // CSWH protection
-        if r.Header.Get("Sec-Fetch-Site") != "same-origin" {
-                return
-        }
+        // CSWH protection, rejects client only if the header is present and invalid for compatibility with older browsers.
+	if r.Header.Get("Sec-Fetch-Site") != "" {
+		if r.Header.Get("Sec-Fetch-Site") != "same-origin" {
+			return
+		}
+	}
 
 	ip, err := auth.GetIP(r)
 	if err != nil {
