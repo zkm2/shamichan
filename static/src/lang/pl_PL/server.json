@@ -148,6 +148,10 @@
 			"Wymuszona anonimowość",
 			"Wyłącz nazwy użytkowników, tripkody i maile w postach"
 		],
+		"funAllowed": [
+			"Allow fun",
+			"Fun is the enemy of the state"
+		],
 		"galleryMode": [
 			"Gallery Mode",
 			"Only show posts containing images"

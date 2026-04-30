@@ -378,6 +378,7 @@ var optionSpecs = [...][]inputSpec{
 	},
 	{
 		{ID: "horizontalNowPlaying"},
+		{ID: "funAllowed"},
 		{ID: "radio"},
 		{ID: "eden"},
 		{ID: "shamiradio"},

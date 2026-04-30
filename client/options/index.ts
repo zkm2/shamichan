@@ -30,6 +30,7 @@ interface Options extends ChangeEmitter {
 	eden: boolean
 	shamiradio: boolean
 	roriradio: boolean
+	funAllowed: boolean
 	bgVideo: string
 	bgMute: boolean
 	horizontalPosting: boolean

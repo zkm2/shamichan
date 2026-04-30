@@ -108,6 +108,9 @@ export const specs: { [id: string]: OptionSpec } = {
 			"#banner-center > div:not(.hidden) { display: inline; margin: 0.5em; }"
 		),
 	},
+	funAllowed: {
+		default: true,
+	},
 	radio: {
 		exec: toggleNowPlaying(
 			"https://r-a-d.io/",

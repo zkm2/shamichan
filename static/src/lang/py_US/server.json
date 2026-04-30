@@ -148,6 +148,10 @@
 			"Forced Anonymous",
 			"Disable user names, tripcodes and emails on posts"
 		],
+		"funAllowed": [
+			"Allow fun",
+			"Fun is the enemy of the state"
+		],
 		"galleryMode": [
 			"Gallery Mode",
 			"Only show posts containing images"
@@ -352,6 +356,10 @@
 			"Root URL",
 			"Root URL of the imageboard. Required for some image search providers to work."
 		],
+		"roriradio": [
+			"Roriradio",
+			"Not a breakfast machine"
+		],
 		"rules": [
 			"Rules",
 			"Board rules to display in the rule modal window"
@@ -375,10 +383,6 @@
 		"shamiradio": [
 			"Shamiradio",
 			"Shamiradio now playing banner"
-		],
-		"shamiradio2": [
-			"ShamIIradio",
-			"The cooler shamiradio"
 		],
 		"spoilers": [
 			"Image Spoilers",
