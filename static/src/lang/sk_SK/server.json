@@ -352,6 +352,10 @@
 			"Root URL",
 			"Root URL of the imageboard. Required for some image search providers to work."
 		],
+		"roriradio": [
+			"Roriradio",
+			"Not a breakfast machine"
+		],
 		"rules": [
 			"Pravítka",
 			"Board rules to display in the rule modal window"

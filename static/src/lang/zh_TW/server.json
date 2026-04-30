@@ -352,6 +352,10 @@
 			"根 URL",
 			"貼圖討論版的根 URL. 有些圖片搜尋提供商需要它才可以運作。"
 		],
+		"roriradio": [
+			"Roriradio",
+			"Not a breakfast machine"
+		],
 		"rules": [
 			"規則",
 			"要在規則模組窗口顯示的板規"

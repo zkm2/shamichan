@@ -352,6 +352,10 @@
 			"Root URL",
 			"Root URL van de imageboard. Vereist voor sommige image search-providers om te werken."
 		],
+		"roriradio": [
+			"Roriradio",
+			"Not a breakfast machine"
+		],
 		"rules": [
 			"Regels",
 			"Board regels om weer te geven in het regelmodaal venster"

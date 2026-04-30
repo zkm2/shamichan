@@ -161,6 +161,22 @@ export const specs: { [id: string]: OptionSpec } = {
 			},
 		),
 	},
+	roriradio: {
+		exec: toggleNowPlaying(
+			"https://strim.box.loli.attorney/",
+			"https://shamiradio.stream/status-json.xsl",
+			({ icestats: { source } }) => {
+				if (source === undefined) {
+					return null
+				} else {				
+					const [fallback, main] = Array.isArray(source) ? source : [source]
+					const { listeners, server_name: streamer, title: song = "oh dear, tags aren't set" }
+						= main?.stream_start ? main : fallback
+					return { listeners, song, streamer }
+				}
+			},
+		),
+	},
 	// User-specified video in the background
 	bgVideo: {
 		type: optionType.menu,
