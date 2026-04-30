@@ -164,7 +164,7 @@ export const specs: { [id: string]: OptionSpec } = {
 	roriradio: {
 		exec: toggleNowPlaying(
 			"https://strim.box.loli.attorney/",
-			"https://shamiradio.stream/status-json.xsl",
+			"https://strim.box.loli.attorney/status-json.xsl",
 			({ icestats: { source } }) => {
 				if (source === undefined) {
 					return null
