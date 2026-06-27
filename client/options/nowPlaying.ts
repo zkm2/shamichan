@@ -80,8 +80,10 @@ class Banner {
 		if (!response.ok) {
 			return defaults
 		}               
-                
-        const data = this.unmarshal(await response.json())
+        let rawData = await response.text()
+        let cleanData = rawData.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        const data = this.unmarshal(JSON.parse(cleanData))
+		
        	if (!RadioData.is(data)) {
                return defaults
         }
